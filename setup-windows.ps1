@@ -15,27 +15,123 @@ function Print-Warn    { Write-Host "[!] $args" -ForegroundColor Yellow }
 function Print-Error   { Write-Host "[X] $args" -ForegroundColor Red }
 
 # ==========================================
-# SATU CAKRAWALA - Banner
+# Animasi helper
+# ==========================================
+function Show-ProgressBar {
+    param([string]$Label, [int]$Duration = 2)
+
+    $width = 30
+    $spin = @('⠋','⠙','⠹','⠸','⠼','⠴','⠦','⠧','⠇','⠏')
+    $steps = $Duration * 10
+
+    for ($i = 0; $i -le $steps; $i++) {
+        $pct = [math]::Floor($i * 100 / $steps)
+        $filled = [math]::Floor($i * $width / $steps)
+        $empty = $width - $filled
+        $bar = ("█" * $filled) + ("░" * $empty)
+        $spinChar = $spin[$i % 10]
+        Write-Host -NoNewline "`r  $spinChar $Label $bar $pct%"
+        Start-Sleep -Milliseconds 100
+    }
+    $fullBar = "█" * $width
+    Write-Host -NoNewline "`r  "
+    Write-Host -NoNewline -ForegroundColor Green "✓"
+    Write-Host " $Label $fullBar 100%"
+}
+
+function Show-TypingText {
+    param([string]$Text, [consolecolor]$Color = "Cyan")
+
+    foreach ($char in $Text.ToCharArray()) {
+        Write-Host -NoNewline -ForegroundColor $Color $char
+        Start-Sleep -Milliseconds 30
+    }
+    Write-Host ""
+}
+
+function Show-RainbowLine {
+    param([int]$Width = 71)
+
+    $colors = @("Red","Yellow","Green","Cyan","Blue","Magenta")
+    for ($i = 0; $i -lt $Width; $i++) {
+        $ci = $i % $colors.Count
+        Write-Host -NoNewline -ForegroundColor $colors[$ci] "━"
+        Start-Sleep -Milliseconds 10
+    }
+    Write-Host ""
+}
+
+function Show-Confetti {
+    $width = [console]::WindowWidth
+    if (-not $width) { $width = 80 }
+    $chars = @('✦','✧','★','☆','◆','◇','●','○','▲','△','■','□')
+    $colors = @("Red","Green","Yellow","Blue","Magenta","Cyan","DarkRed","DarkYellow","DarkBlue","DarkMagenta","DarkCyan")
+
+    for ($row = 0; $row -lt 3; $row++) {
+        $line = ""
+        for ($i = 0; $i -lt $width; $i++) {
+            $ci = Get-Random -Maximum $colors.Count
+            $ch = $chars[(Get-Random -Maximum $chars.Count)]
+            $line += $ch
+        }
+        Write-Host -ForegroundColor $colors[(Get-Random -Maximum $colors.Count)] $line.Substring(0, [math]::Min($line.Length, $width))
+        Start-Sleep -Milliseconds 150
+    }
+}
+
+# ==========================================
+# SATU CAKRAWALA - Animated Banner
 # ==========================================
 Write-Host ""
-Write-Host "  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" -ForegroundColor Cyan
+
+# Baris atas — animasi rainbow
+Show-RainbowLine
+
 Write-Host ""
-Write-Host "               ████    █     █████  █   █  " -ForegroundColor Cyan
-Write-Host "              █       █ █      █    █   █  " -ForegroundColor Cyan
-Write-Host "               ████   █████    █    █   █  " -ForegroundColor Cyan
-Write-Host "                  █   █   █    █    █   █  " -ForegroundColor Cyan
-Write-Host "               ████   █   █    █     ███   " -ForegroundColor Cyan
+
+# Tulisan SATU — muncul baris per baris
+$SatuBanner = @(
+    "               ████    █     █████  █   █  "
+    "              █       █ █      █    █   █  "
+    "               ████   █████    █    █   █  "
+    "                  █   █   █    █    █   █  "
+    "               ████   █   █    █     ███   "
+)
+foreach ($line in $SatuBanner) {
+    Write-Host -ForegroundColor Cyan $line
+    Start-Sleep -Milliseconds 120
+}
+
 Write-Host ""
-Write-Host "     ████   █   █  █ ███    █   █   █   █    █       █     █  " -ForegroundColor Blue
-Write-Host "    █      █ █ █ █  █   █ █ █   █  █ █    █ █     █     █ █ " -ForegroundColor Blue
-Write-Host "    █      ███████   ███  ██████ █ █ █  █████  █      █████" -ForegroundColor Blue
-Write-Host "    █      █   █ █ █  █ █  █   ███ ██  █   █  █      █   █" -ForegroundColor Blue
-Write-Host "     ████  █   ██  █ █  █ █   ██   ██   █   █ █████  █   █" -ForegroundColor Blue
+
+# Tulisan CAKRAWALA — muncul baris per baris
+$CakrawalaBanner = @(
+    "     ████   █   █  █ ███    █   █   █   █    █       █     █  "
+    "    █      █ █ █ █  █   █ █ █   █  █ █    █ █     █     █ █ "
+    "    █      ███████   ███  ██████ █ █ █  █████  █      █████"
+    "    █      █   █ █ █  █ █  █   ███ ██  █   █  █      █   █"
+    "     ████  █   ██  █ █  █ █   ██   ██   █   █ █████  █   █"
+)
+foreach ($line in $CakrawalaBanner) {
+    Write-Host -ForegroundColor Blue $line
+    Start-Sleep -Milliseconds 120
+}
+
 Write-Host ""
-Write-Host "                      Claude Code · Team Setup" -ForegroundColor DarkGray
+
+# Subtitle — typing effect
+Write-Host -NoNewline "    "
+Show-TypingText "Satu Cakrawala · Claude Code · Team Setup" DarkGray
+
 Write-Host ""
-Write-Host "  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" -ForegroundColor Cyan
+
+# Baris bawah — animasi rainbow
+Show-RainbowLine
+
 Write-Host ""
+
+# Loading animation
+Show-ProgressBar "Memulai setup..." 2
 
 # ---------- 1. Cek OS ----------
 if (-not $IsWindows -and -not ($env:OS -match "Windows")) {
@@ -53,11 +149,11 @@ else {
     Print-Warn "Node.js belum terinstall."
 
     if (Get-Command winget -ErrorAction SilentlyContinue) {
-        Write-Host "Menginstall Node.js via winget..."
+        Write-Host "  Menginstall Node.js via winget..."
         winget install OpenJS.NodeJS.LTS --accept-package-agreements --accept-source-agreements
     }
     elseif (Get-Command scoop -ErrorAction SilentlyContinue) {
-        Write-Host "Menginstall Node.js via scoop..."
+        Write-Host "  Menginstall Node.js via scoop..."
         scoop install nodejs-lts
     }
     else {
@@ -85,6 +181,7 @@ if (Get-Command claude -ErrorAction SilentlyContinue) {
 }
 else {
     Print-Warn "Claude Code belum terinstall. Menginstall via npm..."
+    Show-ProgressBar "Installing Claude Code" 3
     npm install -g @anthropic-ai/claude-code
     Print-Status "Claude Code berhasil diinstall"
 }
@@ -158,6 +255,7 @@ if (-not $envVars["ANTHROPIC_AUTH_TOKEN"] -or $envVars["ANTHROPIC_AUTH_TOKEN"] -
 }
 
 # ---------- 6. Simpan .env ----------
+Show-ProgressBar "Menyimpan config" 1
 $envLines = @(
     "# SATU CAKRAWALA - Claude Code Config"
     "ANTHROPIC_BASE_URL=$($envVars['ANTHROPIC_BASE_URL'])"
@@ -202,6 +300,7 @@ if (Test-Path $SettingsDest) {
     Print-Warn "Backup settings lama ke settings.json.bak"
 }
 
+Show-ProgressBar "Generating settings" 1
 $settingsJson = @"
 {
   "permissions": {
@@ -245,7 +344,12 @@ Print-Status "Settings digenerate ke $SettingsDest"
 Write-Host ""
 Write-Host "  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" -ForegroundColor Cyan
 Write-Host ""
-Print-Status "Setup selesai!"
+
+# Confetti!
+Show-Confetti
+
+Write-Host ""
+Write-Host "  🎉 Setup selesai!" -ForegroundColor Green
 Write-Host ""
 Write-Host "  Langkah selanjutnya:"
 Write-Host "    1. Restart PowerShell/terminal"

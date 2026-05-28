@@ -17,6 +17,7 @@ YELLOW='\033[1;33m'
 RED='\033[0;31m'
 CYAN='\033[0;36m'
 BLUE='\033[0;34m'
+MAGENTA='\033[0;35m'
 BOLD='\033[1m'
 DIM='\033[2m'
 NC='\033[0m'
@@ -26,27 +27,153 @@ print_warn()    { echo -e "${YELLOW}[!]${NC} $1"; }
 print_error()   { echo -e "${RED}[✗]${NC} $1"; }
 
 # ==========================================
-# SATU CAKRAWALA - Banner
+# Animasi helper
+# ==========================================
+hide_cursor()  { printf "\033[?25l"; }
+show_cursor()  { printf "\033[?25h"; }
+trap show_cursor EXIT
+
+animate_progress() {
+    local label="$1"
+    local duration="${2:-2}"
+    local width=30
+    local spin='⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏'
+    local steps=$((duration * 10))
+    local i
+
+    hide_cursor
+    for ((i=0; i<=steps; i++)); do
+        local pct=$((i * 100 / steps))
+        local filled=$((i * width / steps))
+        local empty=$((width - filled))
+        local bar=""
+        local j
+        for ((j=0; j<filled; j++)); do bar+="█"; done
+        for ((j=0; j<empty; j++)); do bar+="░"; done
+        local spin_char="${spin:$((i % 10)):1}"
+        printf "\r  ${spin_char} ${CYAN}${label}${NC} ${bar} ${BOLD}${pct}%%${NC}"
+        sleep 0.1
+    done
+    printf "\r  ${GREEN}✓${NC} ${label} ${GREEN}%s${NC} ${BOLD}100%%${NC}\n" "$(printf '█%.0s' $(seq 1 $width))"
+    show_cursor
+}
+
+animate_typing() {
+    local text="$1"
+    local color="${2:-$CYAN}"
+    local i
+    hide_cursor
+    for ((i=0; i<${#text}; i++)); do
+        printf "${color}${text:$i:1}${NC}"
+        sleep 0.03
+    done
+    echo ""
+    show_cursor
+}
+
+animate_rainbow_line() {
+    local width="${1:-71}"
+    local colors=('\033[0;31m' '\033[0;33m' '\033[0;32m' '\033[0;36m' '\033[0;34m' '\033[0;35m')
+    local num_colors=${#colors[@]}
+    local i
+    hide_cursor
+    for ((i=0; i<width; i++)); do
+        local ci=$((i % num_colors))
+        printf "${colors[$ci]}━${NC}"
+        sleep 0.01
+    done
+    echo ""
+    show_cursor
+}
+
+animate_countdown() {
+    local text="$1"
+    local seconds="${2:-3}"
+    local i
+    hide_cursor
+    for ((i=seconds; i>0; i--)); do
+        printf "\r  ${BOLD}${MAGENTA}${text} ${i}...${NC}"
+        sleep 1
+    done
+    printf "\r  ${GREEN}${text} GO!          ${NC}\n"
+    show_cursor
+}
+
+animate_confetti() {
+    local width=$(tput cols 2>/dev/null || echo 80)
+    local chars='✦✧★☆◆◇●○▲△■□'
+    local colors=('\033[0;31m' '\033[0;32m' '\033[0;33m' '\033[0;34m' '\033[0;35m' '\033[0;36m' '\033[1;31m' '\033[1;33m' '\033[1;34m' '\033[1;35m' '\033[1;36m')
+    local line
+    local row
+    hide_cursor
+    for ((row=0; row<3; row++)); do
+        line=""
+        for ((i=0; i<width; i++)); do
+            local ci=$((RANDOM % ${#colors[@]}))
+            local ch=$(printf '%s' "$chars" | cut -c$((RANDOM % ${#chars} + 1)))
+            line+="${colors[$ci]}${ch}${NC}"
+        done
+        printf "%s\n" "$line"
+        sleep 0.15
+    done
+    show_cursor
+}
+
+# ==========================================
+# SATU CAKRAWALA - Animated Banner
 # ==========================================
 echo ""
-echo -e "  ${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+
+# Baris atas — animasi rainbow
+animate_rainbow_line
+
 echo ""
-echo -e "  ${BOLD}${CYAN}             ████    █     █████  █   █  ${NC}"
-echo -e "  ${BOLD}${CYAN}            █       █ █      █    █   █  ${NC}"
-echo -e "  ${BOLD}${CYAN}             ████   █████    █    █   █  ${NC}"
-echo -e "  ${BOLD}${CYAN}                █   █   █    █    █   █  ${NC}"
-echo -e "  ${BOLD}${CYAN}             ████   █   █    █     ███   ${NC}"
+
+# Tulisan SATU — muncul baris per baris
+hide_cursor
+SATU_BANNER=(
+    "  ${BOLD}${CYAN}             ████    █     █████  █   █  ${NC}"
+    "  ${BOLD}${CYAN}            █       █ █      █    █   █  ${NC}"
+    "  ${BOLD}${CYAN}             ████   █████    █    █   █  ${NC}"
+    "  ${BOLD}${CYAN}                █   █   █    █    █   █  ${NC}"
+    "  ${BOLD}${CYAN}             ████   █   █    █     ███   ${NC}"
+)
+for line in "${SATU_BANNER[@]}"; do
+    echo -e "$line"
+    sleep 0.12
+done
+
 echo ""
-echo -e "  ${BOLD}${BLUE}   ████   █   █  █ ███    █   █   █   █    █       █     █  ${NC}"
-echo -e "  ${BOLD}${BLUE}  █      █ █ █ █  █   █ █ █   █  █ █    █ █     █     █ █ ${NC}"
-echo -e "  ${BOLD}${BLUE}  █      ███████   ███  ██████ █ █ █  █████  █      █████${NC}"
-echo -e "  ${BOLD}${BLUE}  █      █   █ █ █  █ █  █   ███ ██  █   █  █      █   █${NC}"
-echo -e "  ${BOLD}${BLUE}   ████  █   ██  █ █  █ █   ██   ██   █   █ █████  █   █${NC}"
+
+# Tulisan CAKRAWALA — muncul baris per baris
+CAKRAWALA_BANNER=(
+    "  ${BOLD}${BLUE}   ████   █   █  █ ███    █   █   █   █    █       █     █  ${NC}"
+    "  ${BOLD}${BLUE}  █      █ █ █ █  █   █ █ █   █  █ █    █ █     █     █ █ ${NC}"
+    "  ${BOLD}${BLUE}  █      ███████   ███  ██████ █ █ █  █████  █      █████${NC}"
+    "  ${BOLD}${BLUE}  █      █   █ █ █  █ █  █   ███ ██  █   █  █      █   █${NC}"
+    "  ${BOLD}${BLUE}   ████  █   ██  █ █  █ █   ██   ██   █   █ █████  █   █${NC}"
+)
+for line in "${CAKRAWALA_BANNER[@]}"; do
+    echo -e "$line"
+    sleep 0.12
+done
+show_cursor
+
 echo ""
-echo -e "  ${DIM}                    Claude Code · Team Setup${NC}"
+
+# Subtitle — typing effect
+echo -ne "  ${DIM}  "
+animate_typing "Satu Cakrawala · Claude Code · Team Setup" "$DIM"
+
 echo ""
-echo -e "  ${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+
+# Baris bawah — animasi rainbow
+animate_rainbow_line
+
 echo ""
+
+# ---------- Loading animation ----------
+animate_progress "Memulai setup..." 2
 
 # ---------- 1. Cek OS ----------
 if [[ "$OSTYPE" != "darwin"* && "$OSTYPE" != "linux"* ]]; then
@@ -65,7 +192,7 @@ check_node() {
 
         if [[ "$OSTYPE" == "darwin"* ]]; then
             if command -v brew &> /dev/null; then
-                echo "Menginstall Node.js via Homebrew..."
+                echo "  Menginstall Node.js via Homebrew..."
                 brew install node
             else
                 print_error "Homebrew belum terinstall. Install dulu:"
@@ -76,7 +203,7 @@ check_node() {
             if command -v nvm &> /dev/null; then
                 nvm install --lts
             elif command -v curl &> /dev/null; then
-                echo "Menginstall Node.js via NodeSource..."
+                echo "  Menginstall Node.js via NodeSource..."
                 curl -fsSL https://deb.nodesource.com/setup_lts.x | sudo -E bash -
                 sudo apt-get install -y nodejs
             else
@@ -96,6 +223,7 @@ if command -v claude &> /dev/null; then
     print_status "Claude Code sudah terinstall"
 else
     print_warn "Claude Code belum terinstall. Menginstall via npm..."
+    animate_progress "Installing Claude Code" 3
     npm install -g @anthropic-ai/claude-code
     print_status "Claude Code berhasil diinstall"
 fi
@@ -161,6 +289,7 @@ if [[ -z "$ANTHROPIC_AUTH_TOKEN" || "$ANTHROPIC_AUTH_TOKEN" == "MASUKAN_API_KEY_
 fi
 
 # ---------- 6. Simpan .env ----------
+animate_progress "Menyimpan config" 1
 cat > "$ENV_FILE" << ENVFILE
 # SATU CAKRAWALA - Claude Code Config
 ANTHROPIC_BASE_URL=$ANTHROPIC_BASE_URL
@@ -211,6 +340,7 @@ if [[ -f "$SETTINGS_DEST" ]]; then
     print_warn "Backup settings lama ke $BACKUP"
 fi
 
+animate_progress "Generating settings" 1
 cat > "$SETTINGS_DEST" << SETTINGSJSON
 {
   "permissions": {
@@ -253,17 +383,22 @@ print_status "Settings digenerate ke $SETTINGS_DEST"
 echo ""
 echo -e "  ${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
 echo ""
-print_status "Setup selesai!"
+
+# Confetti!
+animate_confetti
+
 echo ""
-echo "  Langkah selanjutnya:"
+echo -e "  ${BOLD}${GREEN}  🎉 Setup selesai!${NC}"
+echo ""
+echo -e "  ${BOLD}Langkah selanjutnya:${NC}"
 echo "    1. Restart terminal (biar env vars ke-load)"
 echo "    2. Masuk ke project kamu:  cd /path/to/project"
 echo "    3. Jalankan Claude Code:   claude"
 echo ""
 echo "  Update konfigurasi:"
 echo "    Re-run script ini, atau edit manual:"
-echo "    Config  →  $ENV_FILE"
-echo "    Setting →  $SETTINGS_DEST"
+echo -e "    Config  ${CYAN}→${NC}  $ENV_FILE"
+echo -e "    Setting ${CYAN}→${NC}  $SETTINGS_DEST"
 echo ""
 echo -e "  ${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
 echo ""
