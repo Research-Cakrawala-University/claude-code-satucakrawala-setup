@@ -201,13 +201,13 @@ Saat muncul prompt seperti ini:
   ━━━ API Configuration ━━━
 
   Masukkan API Key dari z.ai kamu:
-  (Copas token dari dashboard z.ai, lalu tekan Enter)
+  (Copas token yang dikasih admin, lalu tekan Enter)
 
   API Key:
 ```
 
-1. Buka dashboard z.ai di browser
-2. Copy API key kamu
+1. Minta token API Key dari admin tim
+2. Copy token tersebut
 3. Paste di terminal
 4. Tekan **Enter**
 

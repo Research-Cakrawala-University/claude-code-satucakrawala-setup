@@ -144,7 +144,7 @@ if (-not $envVars["ANTHROPIC_AUTH_TOKEN"] -or $envVars["ANTHROPIC_AUTH_TOKEN"] -
     Write-Host "  Masukkan API Key dari " -NoNewline
     Write-Host "z.ai" -ForegroundColor White -NoNewline
     Write-Host " kamu:"
-    Write-Host "  (Copas token dari dashboard z.ai, lalu tekan Enter)" -ForegroundColor DarkGray
+    Write-Host "  (Copas token yang dikasih admin, lalu tekan Enter)" -ForegroundColor DarkGray
     Write-Host ""
     $apiKeyInput = Read-Host "  API Key"
 

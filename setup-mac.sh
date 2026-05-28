@@ -147,7 +147,7 @@ fi
 
 if [[ -z "$ANTHROPIC_AUTH_TOKEN" || "$ANTHROPIC_AUTH_TOKEN" == "MASUKAN_API_KEY_KAMU_DISINI" ]]; then
     echo -e "  Masukkan API Key dari ${BOLD}z.ai${NC} kamu:"
-    echo -e "  ${DIM}(Copas token dari dashboard z.ai, lalu tekan Enter)${NC}"
+    echo -e "  ${DIM}(Copas token yang dikasih admin, lalu tekan Enter)${NC}"
     echo ""
     read -p "  API Key: " api_key_input < /dev/tty
 
