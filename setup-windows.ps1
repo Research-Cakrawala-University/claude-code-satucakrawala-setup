@@ -15,27 +15,51 @@ function Print-Warn    { Write-Host "[!] $args" -ForegroundColor Yellow }
 function Print-Error   { Write-Host "[X] $args" -ForegroundColor Red }
 
 # ==========================================
+# Cek Unicode support
+# ==========================================
+try {
+    $null = [console]::OutputEncoding
+    $unicodeOk = $true
+} catch {
+    $unicodeOk = $false
+}
+
+# Set encoding ke UTF-8 kalau bisa
+try {
+    [console]::OutputEncoding = [System.Text.Encoding]::UTF8
+    $OutputEncoding = [System.Text.Encoding]::UTF8
+} catch {}
+
+# ==========================================
 # Animasi helper
 # ==========================================
 function Show-ProgressBar {
     param([string]$Label, [int]$Duration = 2)
 
     $width = 30
-    $spin = @('⠋','⠙','⠹','⠸','⠼','⠴','⠦','⠧','⠇','⠏')
+    if ($unicodeOk) {
+        $spin = @('⠋','⠙','⠹','⠸','⠼','⠴','⠦','⠧','⠇','⠏')
+        $fillChar = "█"
+        $emptyChar = "░"
+    } else {
+        $spin = @('|','/','-","\",'|','/','-","\",'|','/')
+        $fillChar = "#"
+        $emptyChar = "-"
+    }
     $steps = $Duration * 10
 
     for ($i = 0; $i -le $steps; $i++) {
         $pct = [math]::Floor($i * 100 / $steps)
         $filled = [math]::Floor($i * $width / $steps)
         $empty = $width - $filled
-        $bar = ("█" * $filled) + ("░" * $empty)
+        $bar = ($fillChar * $filled) + ($emptyChar * $empty)
         $spinChar = $spin[$i % 10]
         Write-Host -NoNewline "`r  $spinChar $Label $bar $pct%"
         Start-Sleep -Milliseconds 100
     }
-    $fullBar = "█" * $width
+    $fullBar = $fillChar * $width
     Write-Host -NoNewline "`r  "
-    Write-Host -NoNewline -ForegroundColor Green "✓"
+    Write-Host -NoNewline -ForegroundColor Green "OK"
     Write-Host " $Label $fullBar 100%"
 }
 
@@ -53,9 +77,10 @@ function Show-RainbowLine {
     param([int]$Width = 71)
 
     $colors = @("Red","Yellow","Green","Cyan","Blue","Magenta")
+    $lineChar = if ($unicodeOk) { "━" } else { "=" }
     for ($i = 0; $i -lt $Width; $i++) {
         $ci = $i % $colors.Count
-        Write-Host -NoNewline -ForegroundColor $colors[$ci] "━"
+        Write-Host -NoNewline -ForegroundColor $colors[$ci] $lineChar
         Start-Sleep -Milliseconds 10
     }
     Write-Host ""
@@ -64,13 +89,16 @@ function Show-RainbowLine {
 function Show-Confetti {
     $width = [console]::WindowWidth
     if (-not $width) { $width = 80 }
-    $chars = @('✦','✧','★','☆','◆','◇','●','○','▲','△','■','□')
+    if ($unicodeOk) {
+        $chars = @('✦','✧','★','☆','◆','◇','●','○','▲','△','■','□')
+    } else {
+        $chars = @('*','#','@','+','o','O','x','X','$','%','&','^')
+    }
     $colors = @("Red","Green","Yellow","Blue","Magenta","Cyan","DarkRed","DarkYellow","DarkBlue","DarkMagenta","DarkCyan")
 
     for ($row = 0; $row -lt 3; $row++) {
         $line = ""
         for ($i = 0; $i -lt $width; $i++) {
-            $ci = Get-Random -Maximum $colors.Count
             $ch = $chars[(Get-Random -Maximum $chars.Count)]
             $line += $ch
         }
