@@ -120,54 +120,220 @@ animate_confetti() {
 }
 
 # ==========================================
+# Matrix rain effect (background)
+# ==========================================
+matrix_rain_frame() {
+    local width=$(tput cols 2>/dev/null || echo 80)
+    local height=${1:-5}
+    local chars='ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789@#$%&'
+    local num_chars=${#chars}
+    local row col
+    for ((row=0; row<height; row++)); do
+        local line=""
+        for ((col=0; col<width; col++)); do
+            local ci=$((RANDOM % num_chars))
+            local ch="${chars:$ci:1}"
+            local brightness=$((RANDOM % 3))
+            case $brightness in
+                0) line+="${DIM}\033[0;32m${ch}${NC}" ;;
+                1) line+="${DIM}\033[0;36m${ch}${NC}" ;;
+                2) line+="${DIM}\033[2;37m${ch}${NC}" ;;
+            esac
+        done
+        echo -e "$line"
+    done
+}
+
+# ==========================================
+# Decode effect — karakter acak berubah jadi teks asli
+# ==========================================
+animate_decode_line() {
+    local target="$1"
+    local color="$2"
+    local scramble_chars='ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789@#&!?*+=/<>[]{}'
+    local num_scramble=${#scramble_chars}
+    local len=${#target}
+    local rounds=12
+    local round i
+
+    hide_cursor
+    for ((round=0; round<=rounds; round++)); do
+        local display=""
+        for ((i=0; i<len; i++)); do
+            local target_char="${target:$i:1}"
+            if [[ "$target_char" == " " ]]; then
+                display+=" "
+                continue
+            fi
+            # Semakin banyak round, semakin banyak karakter yang "lock" ke target
+            local lock_chance=$((round * 100 / rounds))
+            local rand=$((RANDOM % 100))
+            if [[ $rand -lt $lock_chance ]]; then
+                display+="${target_char}"
+            else
+                local si=$((RANDOM % num_scramble))
+                display+="${scramble_chars:$si:1}"
+            fi
+        done
+        printf "\r  %b%s%b" "$color" "$display" "$NC"
+        sleep 0.06
+    done
+    printf "\r  %b%s%b\n" "$color" "$target" "$NC"
+    show_cursor
+}
+
+# ==========================================
+# Color wave over ASCII art lines
+# ==========================================
+animate_color_wave() {
+    local -a lines=("$@")
+    local num_lines=${#lines[@]}
+    local colors=(
+        '\033[1;36m'  # cyan bright
+        '\033[1;34m'  # blue bright
+        '\033[1;35m'  # magenta bright
+        '\033[1;33m'  # yellow bright
+        '\033[1;32m'  # green bright
+        '\033[1;36m'  # cyan bright
+    )
+    local num_colors=${#colors[@]}
+    local frames=20
+    local frame line_idx
+
+    hide_cursor
+    # First: print all lines dim
+    tput sc  # save cursor
+    for ((line_idx=0; line_idx<num_lines; line_idx++)); do
+        printf "  %b%s%b\n" "$DIM" "${lines[$line_idx]}" "$NC"
+    done
+
+    # Now animate color wave over them
+    for ((frame=0; frame<frames; frame++)); do
+        tput rc  # restore cursor
+        for ((line_idx=0; line_idx<num_lines; line_idx++)); do
+            local line="${lines[$line_idx]}"
+            local line_len=${#line}
+            local display=""
+            local ci_offset=$(( (frame + line_idx) % num_colors ))
+            local col
+            for ((col=0; col<line_len; col++)); do
+                local ch="${line:$col:1}"
+                if [[ "$ch" == " " ]]; then
+                    display+=" "
+                    continue
+                fi
+                # Wave position based on frame and column
+                local wave_pos=$(( (col + frame * 3) % 40 ))
+                local dist=${wave_pos}
+                if [[ $dist -gt 20 ]]; then
+                    dist=$((40 - dist))
+                fi
+                if [[ $dist -lt 8 ]]; then
+                    local ci=$(( (ci_offset + col / 8) % num_colors ))
+                    display+="${colors[$ci]}${ch}${NC}"
+                else
+                    display+="${DIM}${ch}${NC}"
+                fi
+            done
+            printf "  %b\n" "$display"
+        done
+        sleep 0.08
+    done
+
+    # Final: show all bright
+    tput rc
+    for ((line_idx=0; line_idx<num_lines; line_idx++)); do
+        local ci=$((line_idx % num_colors))
+        printf "  %b%b%s%b\n" "$BOLD" "${colors[$ci]}" "${lines[$line_idx]}" "$NC"
+    done
+    show_cursor
+}
+
+# ==========================================
+# Glitch effect on text
+# ==========================================
+animate_glitch_text() {
+    local text="$1"
+    local color="$2"
+    local glitch_chars='_/\\|░▒▓█'
+    local len=${#text}
+    local frames=8
+    local frame
+
+    hide_cursor
+    for ((frame=0; frame<frames; frame++)); do
+        local display=""
+        for ((i=0; i<len; i++)); do
+            local ch="${text:$i:1}"
+            if [[ "$ch" == " " ]]; then
+                display+=" "
+                continue
+            fi
+            if [[ $((RANDOM % 3)) -eq 0 ]]; then
+                local gi=$((RANDOM % ${#glitch_chars}))
+                display+="${RED}${glitch_chars:$gi:1}${NC}"
+            else
+                display+="${color}${ch}${NC}"
+            fi
+        done
+        printf "\r  %b   " "$display"
+        sleep 0.05
+    done
+    printf "\r  %b%s%b   \n" "$BOLD$color" "$text" "$NC"
+    show_cursor
+}
+# ==========================================
 # SATU CAKRAWALA - Animated Banner
 # ==========================================
 echo ""
 
-# Baris atas — animasi rainbow
+# === Phase 1: Matrix rain intro (1 frame) ===
+matrix_rain_frame 3
+echo ""
+
+# === Phase 2: Rainbow line top ===
 animate_rainbow_line
 
 echo ""
 
-# Tulisan SATU — muncul baris per baris
-hide_cursor
-SATU_BANNER=(
-    "  ${BOLD}${CYAN}             ████    █     █████  █   █  ${NC}"
-    "  ${BOLD}${CYAN}            █       █ █      █    █   █  ${NC}"
-    "  ${BOLD}${CYAN}             ████   █████    █    █   █  ${NC}"
-    "  ${BOLD}${CYAN}                █   █   █    █    █   █  ${NC}"
-    "  ${BOLD}${CYAN}             ████   █   █    █     ███   ${NC}"
+# === Phase 3: ASCII art banner dengan color wave ===
+# Strip ANSI codes untuk mendapat pure ASCII art
+SATU_LINES=(
+    "             ████    █     █████  █   █  "
+    "            █       █ █      █    █   █  "
+    "             ████   █████    █    █   █  "
+    "                █   █   █    █    █   █  "
+    "             ████   █   █    █     ███   "
 )
-for line in "${SATU_BANNER[@]}"; do
-    echo -e "$line"
-    sleep 0.12
-done
+
+CAKRAWALA_LINES=(
+    "   ████   █   █  █ ███    █   █   █   █    █       █     █  "
+    "  █      █ █ █ █  █   █ █ █   █  █ █    █ █     █     █ █ "
+    "  █      ███████   ███  ██████ █ █ █  █████  █      █████"
+    "  █      █   █ █ █  █ █  █   ███ ██  █   █  █      █   █"
+    "   ████  █   ██  █ █  █ █   ██   ██   █   █ █████  █   █"
+)
+
+# Animate SATU with color wave
+animate_color_wave "${SATU_LINES[@]}"
 
 echo ""
 
-# Tulisan CAKRAWALA — muncul baris per baris
-CAKRAWALA_BANNER=(
-    "  ${BOLD}${BLUE}   ████   █   █  █ ███    █   █   █   █    █       █     █  ${NC}"
-    "  ${BOLD}${BLUE}  █      █ █ █ █  █   █ █ █   █  █ █    █ █     █     █ █ ${NC}"
-    "  ${BOLD}${BLUE}  █      ███████   ███  ██████ █ █ █  █████  █      █████${NC}"
-    "  ${BOLD}${BLUE}  █      █   █ █ █  █ █  █   ███ ██  █   █  █      █   █${NC}"
-    "  ${BOLD}${BLUE}   ████  █   ██  █ █  █ █   ██   ██   █   █ █████  █   █${NC}"
-)
-for line in "${CAKRAWALA_BANNER[@]}"; do
-    echo -e "$line"
-    sleep 0.12
-done
+# Animate CAKRAWALA with color wave
+animate_color_wave "${CAKRAWALA_LINES[@]}"
+
 show_cursor
 
 echo ""
 
-# Subtitle — typing effect
-echo -ne "  ${DIM}  "
-animate_typing "Satu Cakrawala · Claude Code · Team Setup" "$DIM"
+# === Phase 4: Subtitle with decode + glitch ===
+animate_decode_line ">> Satu Cakrawala · Claude Code · Team Setup" "${DIM}\033[0;36m"
+sleep 0.2
+animate_glitch_text ">> Satu Cakrawala · Claude Code · Team Setup" "${CYAN}"
 
 echo ""
 
-# Baris bawah — animasi rainbow
+# === Phase 5: Rainbow line bottom ===
 animate_rainbow_line
 
 echo ""
