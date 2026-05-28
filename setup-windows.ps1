@@ -198,15 +198,16 @@ if (-not (Test-Path $ClaudeHome)) { New-Item -ItemType Directory -Path $ClaudeHo
 if (-not (Test-Path $TeamDir)) { New-Item -ItemType Directory -Path $TeamDir | Out-Null }
 
 $envVars = @{
-    'ANTHROPIC_BASE_URL' = 'https://api.z.ai/api/anthropic'
+    'ANTHROPIC_BASE_URL' = ''
     'ANTHROPIC_AUTH_TOKEN' = ''
-    'ANTHROPIC_MODEL' = 'glm-5.1'
-    'ANTHROPIC_SMALL_FAST_MODEL' = 'glm-4.5-air'
-    'ANTHROPIC_DEFAULT_SONNET_MODEL' = 'glm-5.1'
-    'ANTHROPIC_DEFAULT_OPUS_MODEL' = 'glm-5.1'
-    'ANTHROPIC_DEFAULT_HAIKU_MODEL' = 'glm-4.5-air'
+    'ANTHROPIC_MODEL' = ''
+    'ANTHROPIC_SMALL_FAST_MODEL' = ''
+    'ANTHROPIC_DEFAULT_SONNET_MODEL' = ''
+    'ANTHROPIC_DEFAULT_OPUS_MODEL' = ''
+    'ANTHROPIC_DEFAULT_HAIKU_MODEL' = ''
     'API_TIMEOUT_MS' = '3000000'
     'CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC' = '1'
+    'PROVIDER_NAME' = ''
 }
 
 if (Test-Path $EnvFile) {
@@ -218,7 +219,71 @@ if (Test-Path $EnvFile) {
     }
 }
 
-# ---------- 5. Input API Key dari user ----------
+# Detect provider dari URL yang sudah tersimpan
+$currentUrl = $envVars['ANTHROPIC_BASE_URL']
+$detectedProvider = ''
+if ($currentUrl -match 'z\.ai') {
+    $detectedProvider = 'z.ai'
+} elseif ($currentUrl -match 'xiaomimimo') {
+    $detectedProvider = 'mimo'
+}
+
+# ---------- 5. Pilih Provider ----------
+Write-Host ''
+Write-Host '  --- Pilih Provider ---' -ForegroundColor Cyan
+Write-Host ''
+Write-Host '    1. z.ai (GLM)' -ForegroundColor White
+Write-Host '       URL: https://api.z.ai/api/anthropic' -ForegroundColor DarkGray
+Write-Host '       Model: glm-5.1' -ForegroundColor DarkGray
+Write-Host ''
+Write-Host '    2. Mimo (Xiomi)' -ForegroundColor White
+Write-Host '       URL: https://token-plan-sgp.xiaomimimo.com/anthropic' -ForegroundColor DarkGray
+Write-Host '       Model: mimo-v2.5-pro' -ForegroundColor DarkGray
+Write-Host ''
+
+$skipProviderSelect = $false
+if ($detectedProvider) {
+    Print-Status "Provider sekarang: $detectedProvider"
+    Write-Host ''
+    $changeProvider = Read-Host '  Ganti provider? (y/N)'
+    if ($changeProvider -ne 'y' -and $changeProvider -ne 'Y') {
+        $skipProviderSelect = $true
+        Print-Status "Mempertahankan provider: $detectedProvider"
+    }
+}
+
+if (-not $skipProviderSelect) {
+    $providerChoice = Read-Host '  Pilih (1/2)'
+    Write-Host ''
+
+    if ($providerChoice -eq '1') {
+        $envVars['PROVIDER_NAME'] = 'z.ai'
+        $envVars['ANTHROPIC_BASE_URL'] = 'https://api.z.ai/api/anthropic'
+        $envVars['ANTHROPIC_MODEL'] = 'glm-5.1'
+        $envVars['ANTHROPIC_SMALL_FAST_MODEL'] = 'glm-4.5-air'
+        $envVars['ANTHROPIC_DEFAULT_SONNET_MODEL'] = 'glm-5.1'
+        $envVars['ANTHROPIC_DEFAULT_OPUS_MODEL'] = 'glm-5.1'
+        $envVars['ANTHROPIC_DEFAULT_HAIKU_MODEL'] = 'glm-4.5-air'
+    }
+    elseif ($providerChoice -eq '2') {
+        $envVars['PROVIDER_NAME'] = 'mimo'
+        $envVars['ANTHROPIC_BASE_URL'] = 'https://token-plan-sgp.xiaomimimo.com/anthropic'
+        $envVars['ANTHROPIC_MODEL'] = 'mimo-v2.5-pro'
+        $envVars['ANTHROPIC_SMALL_FAST_MODEL'] = 'mimo-v2.5'
+        $envVars['ANTHROPIC_DEFAULT_SONNET_MODEL'] = 'mimo-v2.5'
+        $envVars['ANTHROPIC_DEFAULT_OPUS_MODEL'] = 'mimo-v2.5-pro'
+        $envVars['ANTHROPIC_DEFAULT_HAIKU_MODEL'] = 'mimo-v2.5'
+    }
+    else {
+        Print-Error 'Pilihan tidak valid!'
+        exit 1
+    }
+    Print-Status "Provider dipilih: $($envVars['PROVIDER_NAME'])"
+}
+
+$providerName = $envVars['PROVIDER_NAME']
+
+# ---------- 6. Input API Key ----------
 Write-Host ''
 Write-Host '  --- API Configuration ---' -ForegroundColor Cyan
 Write-Host ''
@@ -240,7 +305,7 @@ if ($existingToken -and $existingToken -ne 'MASUKAN_API_KEY_KAMU_DISINI') {
 
 $currentToken = $envVars['ANTHROPIC_AUTH_TOKEN']
 if (-not $currentToken -or $currentToken -eq 'MASUKAN_API_KEY_KAMU_DISINI') {
-    Write-Host '  Masukkan API Key dari z.ai kamu:'
+    Write-Host "  Masukkan API Key dari $providerName kamu:"
     Write-Host '  (Copas token yang dikasih admin, lalu tekan Enter)' -ForegroundColor DarkGray
     Write-Host ''
     $apiKeyInput = Read-Host '  API Key'
@@ -254,7 +319,7 @@ if (-not $currentToken -or $currentToken -eq 'MASUKAN_API_KEY_KAMU_DISINI') {
     Print-Status 'API Key diterima'
 }
 
-# ---------- 6. Simpan .env ----------
+# ---------- 7. Simpan .env ----------
 Show-ProgressBar 'Menyimpan config' 1
 $envLines = @(
     '# SATU CAKRAWALA - Claude Code Config'
@@ -267,11 +332,12 @@ $envLines = @(
     "ANTHROPIC_DEFAULT_HAIKU_MODEL=$($envVars['ANTHROPIC_DEFAULT_HAIKU_MODEL'])"
     "API_TIMEOUT_MS=$($envVars['API_TIMEOUT_MS'])"
     'CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC=1'
+    "PROVIDER_NAME=$($envVars['PROVIDER_NAME'])"
 )
 $envLines | Set-Content $EnvFile -Encoding UTF8
 Print-Status "Config disimpan ke $EnvFile"
 
-# ---------- 7. Set environment variables permanen (User level) ----------
+# ---------- 8. Set environment variables permanen (User level) ----------
 $envVarNames = @(
     'ANTHROPIC_BASE_URL'
     'ANTHROPIC_AUTH_TOKEN'
@@ -293,7 +359,7 @@ foreach ($varName in $envVarNames) {
 }
 Print-Status 'Environment variables disimpan (User level)'
 
-# ---------- 8. Generate settings.json ----------
+# ---------- 9. Generate settings.json ----------
 if (Test-Path $SettingsDest) {
     $backup = Join-Path $ClaudeHome 'settings.json.bak'
     Copy-Item $SettingsDest $backup -Force
@@ -347,7 +413,7 @@ $settingsJson += '}' + "`n"
 $settingsJson | Set-Content $SettingsDest -Encoding UTF8
 Print-Status "Settings digenerate ke $SettingsDest"
 
-# ---------- 9. Selesai ----------
+# ---------- 10. Selesai ----------
 Write-Host ''
 Write-Host '  ================================================================' -ForegroundColor Cyan
 Write-Host ''

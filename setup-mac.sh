@@ -404,14 +404,15 @@ mkdir -p "$CLAUDE_HOME"
 mkdir -p "$CLAUDE_TEAM_DIR"
 
 # Default values
-ANTHROPIC_BASE_URL="https://api.z.ai/api/anthropic"
-ANTHROPIC_MODEL="glm-5.1"
-ANTHROPIC_SMALL_FAST_MODEL="glm-4.5-air"
-ANTHROPIC_DEFAULT_SONNET_MODEL="glm-5.1"
-ANTHROPIC_DEFAULT_OPUS_MODEL="glm-5.1"
-ANTHROPIC_DEFAULT_HAIKU_MODEL="glm-4.5-air"
 API_TIMEOUT_MS="3000000"
 ANTHROPIC_AUTH_TOKEN=""
+ANTHROPIC_BASE_URL=""
+ANTHROPIC_MODEL=""
+ANTHROPIC_SMALL_FAST_MODEL=""
+ANTHROPIC_DEFAULT_SONNET_MODEL=""
+ANTHROPIC_DEFAULT_OPUS_MODEL=""
+ANTHROPIC_DEFAULT_HAIKU_MODEL=""
+PROVIDER_NAME=""
 
 # Parse existing .env kalau ada
 if [[ -f "$ENV_FILE" ]]; then
@@ -423,7 +424,71 @@ if [[ -f "$ENV_FILE" ]]; then
     done < "$ENV_FILE"
 fi
 
-# ---------- 5. Input API Key dari user ----------
+# Detect provider dari URL yang sudah tersimpan
+if [[ -n "$ANTHROPIC_BASE_URL" ]]; then
+    if [[ "$ANTHROPIC_BASE_URL" == *"z.ai"* ]]; then
+        PROVIDER_NAME="z.ai"
+    elif [[ "$ANTHROPIC_BASE_URL" == *"xiaomimimo"* ]]; then
+        PROVIDER_NAME="mimo"
+    fi
+fi
+
+# ---------- 5. Pilih Provider ----------
+echo ""
+echo -e "  ${BOLD}${CYAN}━━━ Pilih Provider ━━━${NC}"
+echo ""
+echo -e "    ${BOLD}1.${NC} z.ai (GLM)"
+echo -e "       ${DIM}URL: https://api.z.ai/api/anthropic${NC}"
+echo -e "       ${DIM}Model: glm-5.1${NC}"
+echo ""
+echo -e "    ${BOLD}2.${NC} Mimo (Xiomi)"
+echo -e "       ${DIM}URL: https://token-plan-sgp.xiaomimimo.com/anthropic${NC}"
+echo -e "       ${DIM}Model: mimo-v2.5-pro${NC}"
+echo ""
+
+if [[ -n "$PROVIDER_NAME" ]]; then
+    echo -e "  ${GREEN}[✓]${NC} Provider sekarang: ${BOLD}$PROVIDER_NAME${NC}"
+    echo ""
+    read -p "  Ganti provider? (y/N): " change_provider < /dev/tty
+    if [[ ! "$change_provider" =~ ^[Yy]$ ]]; then
+        # Keep existing, skip selection
+        echo ""
+        print_status "Mempertahankan provider: $PROVIDER_NAME"
+    fi
+fi
+
+if [[ -z "$PROVIDER_NAME" || "${change_provider:-}" =~ ^[Yy]$ ]]; then
+    read -p "  Pilih (1/2): " provider_choice < /dev/tty
+    echo ""
+
+    case "$provider_choice" in
+        1)
+            PROVIDER_NAME="z.ai"
+            ANTHROPIC_BASE_URL="https://api.z.ai/api/anthropic"
+            ANTHROPIC_MODEL="glm-5.1"
+            ANTHROPIC_SMALL_FAST_MODEL="glm-4.5-air"
+            ANTHROPIC_DEFAULT_SONNET_MODEL="glm-5.1"
+            ANTHROPIC_DEFAULT_OPUS_MODEL="glm-5.1"
+            ANTHROPIC_DEFAULT_HAIKU_MODEL="glm-4.5-air"
+            ;;
+        2)
+            PROVIDER_NAME="mimo"
+            ANTHROPIC_BASE_URL="https://token-plan-sgp.xiaomimimo.com/anthropic"
+            ANTHROPIC_MODEL="mimo-v2.5-pro"
+            ANTHROPIC_SMALL_FAST_MODEL="mimo-v2.5"
+            ANTHROPIC_DEFAULT_SONNET_MODEL="mimo-v2.5"
+            ANTHROPIC_DEFAULT_OPUS_MODEL="mimo-v2.5-pro"
+            ANTHROPIC_DEFAULT_HAIKU_MODEL="mimo-v2.5"
+            ;;
+        *)
+            print_error "Pilihan tidak valid!"
+            exit 1
+            ;;
+    esac
+    print_status "Provider dipilih: $PROVIDER_NAME"
+fi
+
+# ---------- 6. Input API Key ----------
 echo ""
 echo -e "  ${BOLD}${CYAN}━━━ API Configuration ━━━${NC}"
 echo ""
@@ -432,7 +497,6 @@ if [[ -n "$ANTHROPIC_AUTH_TOKEN" && "$ANTHROPIC_AUTH_TOKEN" != "MASUKAN_API_KEY_
     print_status "API Key sudah tersimpan"
     echo -e "  ${DIM}(Token: ${ANTHROPIC_AUTH_TOKEN:0:8}...${ANTHROPIC_AUTH_TOKEN: -4})${NC}"
     echo ""
-    # Saat curl | bash, stdin adalah pipe, jadi baca dari /dev/tty
     read -p "  Ingin ganti token? (y/N): " change_token < /dev/tty
     if [[ "$change_token" =~ ^[Yy]$ ]]; then
         ANTHROPIC_AUTH_TOKEN=""
@@ -440,7 +504,7 @@ if [[ -n "$ANTHROPIC_AUTH_TOKEN" && "$ANTHROPIC_AUTH_TOKEN" != "MASUKAN_API_KEY_
 fi
 
 if [[ -z "$ANTHROPIC_AUTH_TOKEN" || "$ANTHROPIC_AUTH_TOKEN" == "MASUKAN_API_KEY_KAMU_DISINI" ]]; then
-    echo -e "  Masukkan API Key dari ${BOLD}z.ai${NC} kamu:"
+    echo -e "  Masukkan API Key dari ${BOLD}${PROVIDER_NAME}${NC} kamu:"
     echo -e "  ${DIM}(Copas token yang dikasih admin, lalu tekan Enter)${NC}"
     echo ""
     read -p "  API Key: " api_key_input < /dev/tty
@@ -454,7 +518,7 @@ if [[ -z "$ANTHROPIC_AUTH_TOKEN" || "$ANTHROPIC_AUTH_TOKEN" == "MASUKAN_API_KEY_
     print_status "API Key diterima"
 fi
 
-# ---------- 6. Simpan .env ----------
+# ---------- 7. Simpan .env ----------
 animate_progress "Menyimpan config" 1
 cat > "$ENV_FILE" << ENVFILE
 # SATU CAKRAWALA - Claude Code Config
@@ -467,10 +531,11 @@ ANTHROPIC_DEFAULT_OPUS_MODEL=$ANTHROPIC_DEFAULT_OPUS_MODEL
 ANTHROPIC_DEFAULT_HAIKU_MODEL=$ANTHROPIC_DEFAULT_HAIKU_MODEL
 API_TIMEOUT_MS=$API_TIMEOUT_MS
 CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC=1
+PROVIDER_NAME=$PROVIDER_NAME
 ENVFILE
 print_status "Config disimpan ke $ENV_FILE"
 
-# ---------- 7. Set environment variables permanen ----------
+# ---------- 8. Set environment variables permanen ----------
 SHELL_RC=""
 if [[ -f "$HOME/.zshrc" ]]; then
     SHELL_RC="$HOME/.zshrc"
@@ -499,7 +564,7 @@ else
     print_warn "Tidak ditemukan .zshrc atau .bashrc. Set env vars manual."
 fi
 
-# ---------- 8. Generate ~/.claude/settings.json ----------
+# ---------- 9. Generate ~/.claude/settings.json ----------
 if [[ -f "$SETTINGS_DEST" ]]; then
     BACKUP="$SETTINGS_DEST.bak"
     cp "$SETTINGS_DEST" "$BACKUP"
@@ -545,7 +610,7 @@ cat > "$SETTINGS_DEST" << SETTINGSJSON
 SETTINGSJSON
 print_status "Settings digenerate ke $SETTINGS_DEST"
 
-# ---------- 9. Selesai ----------
+# ---------- 10. Selesai ----------
 echo ""
 echo -e "  ${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
 echo ""
