@@ -389,8 +389,13 @@ if command -v claude &> /dev/null; then
     print_status "Claude Code sudah terinstall"
 else
     print_warn "Claude Code belum terinstall. Menginstall via npm..."
+    # Set npm prefix ke user directory supaya ga perlu sudo
+    NPM_GLOBAL="$HOME/.npm-global"
+    mkdir -p "$NPM_GLOBAL"
+    npm config set prefix "$NPM_GLOBAL"
+    export PATH="$NPM_GLOBAL/bin:$PATH"
     animate_progress "Installing Claude Code" 3
-    sudo npm install -g @anthropic-ai/claude-code
+    npm install -g @anthropic-ai/claude-code
     print_status "Claude Code berhasil diinstall"
 fi
 
@@ -554,6 +559,7 @@ if [[ -n "$SHELL_RC" ]]; then
     echo "" >> "$SHELL_RC"
     echo "# CLAUDE_TEAM_SETUP_MARKER" >> "$SHELL_RC"
     echo "# Satu Cakrawala - Claude Code Team Config (auto-added)" >> "$SHELL_RC"
+    echo "export PATH=\"$HOME/.npm-global/bin:\$PATH\"" >> "$SHELL_RC"
     echo "export ANTHROPIC_BASE_URL=\"$ANTHROPIC_BASE_URL\"" >> "$SHELL_RC"
     echo "export ANTHROPIC_AUTH_TOKEN=\"$ANTHROPIC_AUTH_TOKEN\"" >> "$SHELL_RC"
     echo "export API_TIMEOUT_MS=\"$API_TIMEOUT_MS\"" >> "$SHELL_RC"
