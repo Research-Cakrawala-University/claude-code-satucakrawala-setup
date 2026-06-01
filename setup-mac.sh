@@ -390,7 +390,7 @@ if command -v claude &> /dev/null; then
 else
     print_warn "Claude Code belum terinstall. Menginstall via npm..."
     animate_progress "Installing Claude Code" 3
-    npm install -g @anthropic-ai/claude-code
+    sudo npm install -g @anthropic-ai/claude-code
     print_status "Claude Code berhasil diinstall"
 fi
 
