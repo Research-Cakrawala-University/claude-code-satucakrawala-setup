@@ -14,7 +14,7 @@ irm https://raw.githubusercontent.com/Research-Cakrawala-University/claude-code-
 
 ## Yang Perlu Disiapkan
 
-- API Key dari z.ai (akan diminta saat setup berjalan)
+- API Key dari z.ai atau Mimo (akan diminta saat setup berjalan)
 
 ## Setelah Setup
 

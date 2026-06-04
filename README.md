@@ -1,8 +1,8 @@
 # SATU CAKRAWALA — Claude Code Team Setup
 
-Setup otomatis untuk tim **Satu Cakrawala** agar bisa langsung pakai **Claude Code** dengan provider **z.ai (GLM)**.
+Setup otomatis untuk tim **Satu Cakrawala** agar bisa langsung pakai **Claude Code** dengan pilihan provider **z.ai (GLM)** atau **Mimo (Xiomi)**.
 
-Tidak perlu clone, tidak perlu configurasi manual — cukup satu command.
+Tidak perlu clone, tidak perlu configurasi manual — cukup satu command, pilih provider, masukkan API key, selesai.
 
 ---
 
@@ -24,7 +24,7 @@ Script akan otomatis:
 
 1. Cek & install **Node.js** (jika belum ada)
 2. Cek & install **Claude Code** (jika belum ada)
-3. Minta **API Key** z.ai (copas dari dashboard, lalu Enter)
+3. Minta **API Key** dari admin, pilih provider (z.ai atau Mimo), lalu masukkan token
 4. Generate `~/.claude/settings.json`
 5. Set environment variables permanen
 
@@ -136,8 +136,10 @@ Node.js belum terinstall:
 ### API connection error
 
 - Jalankan ulang script install untuk update token
-- Cek koneksi internet ke `api.z.ai`
-- Pastikan API key masih valid di dashboard z.ai
+- Cek koneksi internet ke provider yang dipilih
+- Pastikan API key masih valid
+- Untuk z.ai: cek `https://api.z.ai`
+- Untuk Mimo: cek `https://token-plan-sgp.xiaomimimo.com`
 
 ### `Permission denied` (macOS/Linux)
 

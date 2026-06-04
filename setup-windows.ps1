@@ -165,7 +165,7 @@ else {
         exit 1
     }
 
-    $env:PATH = [System.Environment]::GetEnvironmentVariable('Machine','Machine') + ';' + [System.Environment]::GetEnvironmentVariable('User','Machine')
+    $env:PATH = [System.Environment]::GetEnvironmentVariable('Path','Machine') + ';' + [System.Environment]::GetEnvironmentVariable('Path','User')
 
     if (Get-Command node -ErrorAction SilentlyContinue) {
         Print-Status "Node.js berhasil diinstall: $(node -v)"

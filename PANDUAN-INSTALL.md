@@ -5,9 +5,9 @@
 
 ## Apa itu Claude Code?
 
-Claude Code adalah AI coding assistant dari Anthropic yang bisa langsung dipakai di terminal. Kita menggunakan provider **z.ai (GLM)** sebagai backend.
+Claude Code adalah AI coding assistant dari Anthropic yang bisa langsung dipakai di terminal. Kita menggunakan dua pilihan provider: **z.ai (GLM)** atau **Mimo (Xiomi)** sebagai backend.
 
-Dengan setup ini, semua member tim bisa langsung pakai Claude Code tanpa configurasi manual — cukup jalankan satu command.
+Dengan setup ini, semua member tim bisa langsung pakai Claude Code tanpa configurasi manual — cukup jalankan satu command, pilih provider, masukkan API key, selesai.
 
 ---
 
@@ -17,9 +17,20 @@ Sebelum mulai, pastikan kamu punya:
 
 | Kebutuhan | Keterangan |
 |---|---|
-| **API Key z.ai** | Minta dari admin tim atau ambil dari dashboard z.ai |
+| **API Key** | Minta dari admin tim (sesuai provider yang dipilih) |
 | **Koneksi internet** | Untuk download Node.js, Claude Code, dan hubungkan ke API |
 | **Terminal / PowerShell** | Untuk menjalankan command install |
+
+---
+
+## Provider yang Tersedia
+
+| Provider | URL | Model Utama | Model Fast |
+|---|---|---|---|
+| **z.ai (GLM)** | `api.z.ai` | glm-5.1 | glm-4.5-air |
+| **Mimo (Xiomi)** | `token-plan-sgp.xiaomimimo.com` | mimo-v2.5-pro | mimo-v2.5 |
+
+> Pilih salah satu. Admin akan kasih API key sesuai provider yang kamu pilih.
 
 ---
 
@@ -167,6 +178,8 @@ Setelah Node.js terinstall, sekarang jalankan script setup Claude Code.
 
 Copy salah satu command di bawah, paste di terminal, lalu tekan Enter.
 
+> **Penting:** Pastikan command dalam satu baris utuh, jangan sampai kepotong.
+
 **macOS / Linux:**
 
 ```bash
@@ -184,7 +197,29 @@ irm https://raw.githubusercontent.com/Research-Cakrawala-University/claude-code-
 > - **Linux**: Ctrl + Shift + V
 > - **Windows**: Klik kanan
 
-### Langkah 2.3: Tunggu Proses Otomatis
+### Langkah 2.3: Pilih Provider
+
+Saat muncul menu pilihan provider:
+
+```
+  ━━━ Pilih Provider ━━━
+
+    1. z.ai (GLM)
+       URL: https://api.z.ai/api/anthropic
+       Model: glm-5.1
+
+    2. Mimo (Xiomi)
+       URL: https://token-plan-sgp.xiaomimimo.com/anthropic
+       Model: mimo-v2.5-pro
+
+  Pilih (1/2):
+```
+
+Ketik **1** untuk z.ai atau **2** untuk Mimo, lalu tekan Enter.
+
+> Pilih provider sesuai API key yang dikasih admin.
+
+### Langkah 2.4: Tunggu Proses Otomatis
 
 Script akan otomatis:
 
@@ -193,14 +228,14 @@ Script akan otomatis:
 
 Tunggu sampai muncul prompt API key. Biasanya sebentar kalau koneksi internet stabil.
 
-### Langkah 2.4: Masukkan API Key
+### Langkah 2.5: Masukkan API Key
 
 Saat muncul prompt seperti ini:
 
 ```
   ━━━ API Configuration ━━━
 
-  Masukkan API Key dari z.ai kamu:
+  Masukkan API Key dari provider kamu:
   (Copas token yang dikasih admin, lalu tekan Enter)
 
   API Key:
@@ -213,7 +248,7 @@ Saat muncul prompt seperti ini:
 
 > **Tips:** Klik kanan di terminal untuk paste, atau gunakan Ctrl+Shift+V (Linux) / Cmd+V (macOS)
 
-### Langkah 2.5: Tunggu Sampai Selesai
+### Langkah 2.6: Tunggu Sampai Selesai
 
 Kalau muncul pesan seperti ini:
 
@@ -222,7 +257,7 @@ Kalau muncul pesan seperti ini:
   [✓] Environment variables ditambahkan ke ~/.zshrc
   [✓] Settings digenerate ke ~/.claude/settings.json
 
-  [✓] Setup selesai!
+  🎉 Setup selesai!
 
     Langkah selanjutnya:
       1. Restart terminal (biar env vars ke-load)
@@ -292,6 +327,20 @@ Setelah menjalankan `claude`, kamu bisa langsung mengetik perintah dalam bahasa 
 
 ## BAGIAN 5: Update & Maintenance
 
+### Ganti Provider
+
+Jalankan ulang command install. Script akan detect provider sekarang dan tanya:
+
+```
+  [✓] Provider sekarang: z.ai
+
+  Ganti provider? (y/N):
+```
+
+Ketik **y** untuk ganti provider, lalu pilih provider baru.
+
+> **Catatan:** Kalau ganti provider, kamu juga perlu masukkan API key baru dari provider tersebut.
+
 ### Update API Key
 
 Jalankan ulang command install:
@@ -346,9 +395,10 @@ npm install -g @anthropic-ai/claude-code
 
 **Solusi:**
 1. Jalankan ulang script install untuk update token
-2. Pastikan API key masih valid di dashboard z.ai
+2. Pastikan API key masih valid
 3. Cek koneksi internet
-4. Cek apakah bisa akses `https://api.z.ai`
+4. Untuk z.ai: cek apakah bisa akses `https://api.z.ai`
+5. Untuk Mimo: cek apakah bisa akses `https://token-plan-sgp.xiaomimimo.com`
 
 ---
 
@@ -383,13 +433,24 @@ Atau gunakan cara `curl | bash` yang otomatis tanpa perlu chmod.
 
 ---
 
+### Command kepotong saat di-paste
+
+**Penyebab:** URL panjang dan ter-wrap ke baris baru saat copy-paste.
+
+**Solusi:**
+- Pastikan command dalam **satu baris utuh**
+- Jangan ada spasi atau enter di tengah URL
+- Atau ketik manual: `curl -fsSL <URL> | bash`
+
+---
+
 ## BAGIAN 7: File Config yang Dihasilkan
 
 Script akan membuat file-file berikut:
 
 | File | Lokasi | Isi |
 |---|---|---|
-| Team Config | `~/.claude-team/.env` | API key, URL, model, timeout |
+| Team Config | `~/.claude-team/.env` | API key, URL, model, timeout, provider |
 | Claude Settings | `~/.claude/settings.json` | Permissions + env vars |
 | Shell Config | `~/.zshrc` / `~/.bashrc` | Environment variables permanen |
 
