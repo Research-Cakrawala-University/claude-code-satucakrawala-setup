@@ -183,6 +183,13 @@ if (Get-Command claude -ErrorAction SilentlyContinue) {
 }
 else {
     Print-Warn 'Claude Code belum terinstall. Menginstall via npm...'
+
+    # Set npm prefix ke user directory supaya ga perlu admin
+    $npmGlobal = Join-Path $env:USERPROFILE '.npm-global'
+    if (-not (Test-Path $npmGlobal)) { New-Item -ItemType Directory -Path $npmGlobal | Out-Null }
+    npm config set prefix $npmGlobal
+    $env:PATH = "$npmGlobal\bin;$env:PATH"
+
     Show-ProgressBar 'Installing Claude Code' 3
     npm install -g @anthropic-ai/claude-code
     Print-Status 'Claude Code berhasil diinstall'
@@ -357,6 +364,17 @@ foreach ($varName in $envVarNames) {
         Set-Item -Path "env:$varName" -Value $envVars[$varName]
     }
 }
+
+# Add npm-global to PATH (User level)
+$npmGlobal = Join-Path $env:USERPROFILE '.npm-global'
+$currentPath = [System.Environment]::GetEnvironmentVariable('Path', 'User')
+if ($currentPath -notlike "*$npmGlobal*") {
+    $newPath = "$npmGlobal\bin;$currentPath"
+    [System.Environment]::SetEnvironmentVariable('Path', $newPath, 'User')
+    $env:PATH = "$npmGlobal\bin;$env:PATH"
+    Print-Status "npm-global ditambahkan ke PATH"
+}
+
 Print-Status 'Environment variables disimpan (User level)'
 
 # ---------- 9. Generate settings.json ----------

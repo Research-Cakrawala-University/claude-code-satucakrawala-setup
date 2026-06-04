@@ -25,12 +25,22 @@ Sebelum mulai, pastikan kamu punya:
 
 ## Provider yang Tersedia
 
-| Provider | URL | Model Utama | Model Fast |
+| Provider | URL | Model | Fast Model |
 |---|---|---|---|
-| **z.ai (GLM)** | `api.z.ai` | glm-5.1 | glm-4.5-air |
-| **Mimo (Xiomi)** | `token-plan-sgp.xiaomimimo.com` | mimo-v2.5-pro | mimo-v2.5 |
+| **z.ai (GLM)** | `https://api.z.ai/api/anthropic` | glm-5.1 | glm-4.5-air |
+| **Mimo (Xiomi)** | `https://token-plan-sgp.xiaomimimo.com/anthropic` | mimo-v2.5-pro | mimo-v2.5 |
 
 > Pilih salah satu. Admin akan kasih API key sesuai provider yang kamu pilih.
+
+### Model Mapping
+
+| Claude Code Setting | z.ai (GLM) | Mimo (Xiomi) |
+|---|---|---|
+| Default Model | glm-5.1 | mimo-v2.5-pro |
+| Small/Fast Model | glm-4.5-air | mimo-v2.5 |
+| Sonnet Model | glm-5.1 | mimo-v2.5 |
+| Opus Model | glm-5.1 | mimo-v2.5-pro |
+| Haiku Model | glm-4.5-air | mimo-v2.5 |
 
 ---
 
@@ -487,11 +497,19 @@ npm uninstall -g @anthropic-ai/claude-code
 Remove-Item -Recurse -Force "$env:USERPROFILE\.claude-team"
 Remove-Item -Force "$env:USERPROFILE\.claude\settings.json"
 
+# Hapus npm-global
+Remove-Item -Recurse -Force "$env:USERPROFILE\.npm-global" -ErrorAction SilentlyContinue
+
 # Hapus env vars
 [System.Environment]::SetEnvironmentVariable("ANTHROPIC_BASE_URL", $null, "User")
 [System.Environment]::SetEnvironmentVariable("ANTHROPIC_AUTH_TOKEN", $null, "User")
 [System.Environment]::SetEnvironmentVariable("API_TIMEOUT_MS", $null, "User")
 [System.Environment]::SetEnvironmentVariable("CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC", $null, "User")
+
+# Hapus npm-global dari PATH
+$currentPath = [System.Environment]::GetEnvironmentVariable("Path", "User")
+$newPath = ($currentPath -split ";" | Where-Object { $_ -notlike "*\.npm-global*" }) -join ";"
+[System.Environment]::SetEnvironmentVariable("Path", $newPath, "User")
 ```
 
 ---
